@@ -7,15 +7,6 @@ on:
     branches: [ master ]
 
 jobs:
-  macos:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: lein deps
-    - name: Run tests
-      run: lein test
-  
   linux:
     runs-on: ubuntu-latest
     steps:
