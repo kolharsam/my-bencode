@@ -45,8 +45,6 @@
         last (subs rev-str 0 1)]
     (= comma last)))
 
-(comma-present? "sasdasdasd,")
-
 ;; The idea is that we can use it for reading both netstrings and bencode
 (defn- read-netstring*
   "Returns the string without the comma"
@@ -87,16 +85,17 @@
          (throw (Exception. "Buffer overflow."))))
      (if-not (comma-present? mod-input)
        (throw (Exception. "Not a valid netstring."))
-       ;; have to check whether the buffer size and the
-       ;; length of the string generated is the same
-       ;;
-       ;; we probably don't have to do this since write
-       ;; would generate a proper netstring for us
-       (read-netstring* mod-input)))))
+       (let [netstring (read-netstring* mod-input)
+             netstring-len (.length netstring)]
+         (if-not (= net-str-len netstring-len)
+           (throw (Exception. "Not a valid netstring. Check length."))
+           netstring))))))
 
+;; TODO: read-bencode, write-bencode
+;; will have to use multi-methods for this
 
 (comment
-  (write-netstring (gen-byte-seq "hello world"))
-  (read-length "1:Hello:world,")
-  (read-netstring "11:hello world,")
+  ;; (write-netstring (gen-byte-seq "hello world"))
+  ;; (read-length "1:Hello:world,")
+  ;; (read-netstring "11:hello world,")
   )
