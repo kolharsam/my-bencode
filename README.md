@@ -10,9 +10,11 @@ This project was done as an exercise.
  - `write-netstring`
  
  TODO: `read-bencode`, `write-bencode`
+ 
+ - Some method(s) to help users
+   - ` gen-byte-seq` - converts a string to a byte-seq
 
 ## References
 
  - Netstrings (http://cr.yp.to/proto/netstrings.txt)
  - Bencode (https://en.wikipedia.org/wiki/Bencode)
- 
