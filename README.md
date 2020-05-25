@@ -4,6 +4,8 @@ It is my own implementation of netstring and bencode in Clojure.
 
 This project was done as an exercise.
 
+![my-bencode CI](https://github.com/kolharsam/my-bencode/workflows/my-bencode%20CI/badge.svg?branch=master)
+
 ## Supported Methods
 
  - `read-netstring`
