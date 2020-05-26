@@ -1,8 +1,16 @@
+;; NOTE - This is a mere representation of the encoding & decoding
+;; To get to the actual implementation we would have to use byte array's / streams
+;;
+;; Check the nrepl/bencode repo for the actual implementation.
+;; It's battle tested and has a marvelously simple API to use it
+;;
+;; TODO: make it use-able with InputStreams and OutputStreams
+;; IDEA: Probably can make this a web app with CLJS, just to give
+;; people and idea of how bencoding works
+
 (ns my-bencode.core
   (:require [clojure.string :as str])
   (:import clojure.lang.RT))
-
-;; TODO: make it use-able with InputStreams and OutputStreams
 
 (def ^{:private true} comma ",")
 (def ^{:private true} colon ":")
@@ -17,7 +25,7 @@
   (let [num (try (Integer/parseInt c)
                  (catch Exception e
                    (str "Errored Input: " e)))]
-    (pos-int? num)))
+    (<= 0 num)))
 
 (defn- to-number
   "collapses the input seq into a number"
@@ -40,7 +48,7 @@
           {:number (to-number nums) :rest-string (apply str (rest in))}
           (if (is-digit? current)
             (recur other (conj nums current))
-            (throw (Exception. "Errored Input!")))))))) ;; an invalid character found before first colon
+            (throw (Exception. "Errored Input3!")))))))) ;; an invalid character found before first colon
 
 (defn- comma-present?
   "Returns true if the input has a comma at the end"
@@ -97,7 +105,7 @@
          net-str-len (:number len-info)
          mod-input (:rest-string len-info)]
      (when-not (nil? buffer-size)
-       (when-not (> net-str-len buffer-size)
+       (when-not (<= net-str-len buffer-size)
          (throw (Exception. "Buffer overflow."))))
      (if-not (comma-present? mod-input)
        (throw (Exception. "Not a valid netstring."))
@@ -107,28 +115,35 @@
            (throw (Exception. "Not a valid netstring. Check length."))
            netstring))))))
 
-;; Bencode
+;; Bencode (pronounced b-encode)
 
-;; Allowed expressions/symbols are:
+;; Allowed expressions are:
 ;; 1. Integers
 ;; 2. Lists
 ;; 3. Byte Strings
 ;; 4. Maps / Dictionaries
 
+;; write-bencode
+
+(declare lexicographical-sort)
+
 (defmulti write-bencode
+  "Returns a bencode for the allowed expressions"
   (fn [input]
     (cond
       (instance? (RT/classForName "[B") input) :bytes
       (integer? input) :integer
       (string? input)  :string
       (nil? input) :list
-      (or (list? input) (coll? input) (.isArray (class input)) (vector? input)) :list
-      ;; (map? input) :map
+      (or (list? input) (.isArray (class input)) (vector? input)) :list
+      (map? input) :map
       :else (type input))))
 
 (defmethod write-bencode :default
   [input]
-  (throw (IllegalArgumentException. (str "Cannot write value of type: " (class input)))))
+  (throw
+   (IllegalArgumentException.
+    (str "Cannot write value of type: " (class input)))))
 
 (defmethod write-bencode :bytes
   [input]
@@ -144,15 +159,42 @@
 
 (defmethod write-bencode :list
   [input]
-  (let [vec-input (vec input)
-        elem-bencode (map write-bencode vec-input)]
-    (str l (str/join elem-bencode) e)))
+  (if (nil? input)
+    (str l e)
+    (let [vec-input (vec input)
+          elem-bencode (map write-bencode vec-input)]
+      (str l (str/join elem-bencode) e))))
 
+(defmethod write-bencode :map
+  [input]
+  (let [mp-keys (keys input)
+        mp-str-keys (map name mp-keys)
+        new-mp (lexicographical-sort mp-str-keys input)
+        new-mp-ben (map write-bencode new-mp)]
+    (str d (str/join new-mp-ben) e)))
+
+;; write-bencode helpers
+
+(defn- lexicographical-sort
+  "Returns the keys of a map arranged in a lexicographical order,
+  the final result is a list with the sorted keys & values interleaved"
+  [mp-keys orig-map]
+  (let [sorted-keys (sort mp-keys)
+        rearranged-vals (reduce
+                         (fn [ord-vals current-key]
+                           (conj ord-vals
+                                 ((keyword current-key) orig-map))) [] sorted-keys)]
+    (interleave (vec sorted-keys) rearranged-vals)))
+
+;; TODO: read-bencode
 
 (comment
-  ;; (write-bencode (format "%o" 34))
-  (write-bencode (gen-byte-seq "Hello"))
-  ;; Another option for testing for class [B
-  (-> (gen-byte-seq "String") class .getComponentType (= Byte/TYPE))
+  ;; Some Notes
 
-  (write-bencode ["span" 2 3 4 5]))
+  ;; (write-bencode (format "%o" 34))
+
+  ;; Another option for testing for class [B
+  ;; (-> (gen-byte-seq "String") class .getComponentType (= Byte/TYPE))
+
+  ;; (coll? {}) - returns true since it implements IPersistentCollection
+  )
