@@ -2,17 +2,21 @@
   (:require [clojure.string :as str])
   (:import clojure.lang.RT))
 
-;; TODO: Use of InputStreams and OutputStreams
+;; TODO: make it use-able with InputStreams and OutputStreams
 
 (def ^{:private true} comma ",")
 (def ^{:private true} colon ":")
+(def ^{:private true} l "l")
+(def ^{:private true} e "e")
+(def ^{:private true} d "d")
+(def ^{:private true} i "i")
 
 (defn- is-digit?
   "Returns true if c is a valid digit and is a positive number"
   [c]
   (let [num (try (Integer/parseInt c)
                  (catch Exception e
-                   (str "Errored Input!")))]
+                   (str "Errored Input: " e)))]
     (pos-int? num)))
 
 (defn- to-number
@@ -117,9 +121,9 @@
       (instance? (RT/classForName "[B") input) :bytes
       (integer? input) :integer
       (string? input)  :string
-      ;; (nil? input) :list
+      (nil? input) :list
+      (or (list? input) (coll? input) (.isArray (class input)) (vector? input)) :list
       ;; (map? input) :map
-      ;; (or (list? input) (coll? input) (.isArray (class input))) :list
       :else (type input))))
 
 (defmethod write-bencode :default
@@ -132,23 +136,23 @@
 
 (defmethod write-bencode :integer
   [input]
-  (str "i" input "e"))
+  (str i input e))
 
 (defmethod write-bencode :string
   [input]
   (write-netstring* (gen-byte-seq input)))
+
+(defmethod write-bencode :list
+  [input]
+  (let [vec-input (vec input)
+        elem-bencode (map write-bencode vec-input)]
+    (str l (str/join elem-bencode) e)))
 
 
 (comment
   ;; (write-bencode (format "%o" 34))
   (write-bencode (gen-byte-seq "Hello"))
   ;; Another option for testing for class [B
+  (-> (gen-byte-seq "String") class .getComponentType (= Byte/TYPE))
 
-  (defn- is-bytestring?
-    "Returns true if input is a bytestring"
-    [input]
-    (-> input
-        class
-        .getComponentType
-        (= Byte/TYPE)))
-  )
+  (write-bencode ["span" 2 3 4 5]))
