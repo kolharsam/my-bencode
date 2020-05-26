@@ -18,7 +18,7 @@
 (defn- to-number
   "collapses the input seq into a number"
   [num-seq]
-  (let [num (apply str num-seq)
+  (let [num (str/join num-seq)
         to-num (Integer/parseInt num)]
     to-num))
 
@@ -141,12 +141,7 @@
 
 (comment
   ;; (write-bencode (format "%o" 34))
-  (is-bytestring? (gen-byte-seq "assss"))
   (write-bencode (gen-byte-seq "Hello"))
-  (def s (gen-byte-seq "as"))
-  (= (type s) )
-
-
   ;; Another option for testing for class [B
 
   (defn- is-bytestring?
