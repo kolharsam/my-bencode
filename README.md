@@ -10,8 +10,9 @@ This project was done as an exercise.
 
  - `read-netstring`
  - `write-netstring`
+ - `write-bencode`
  
- TODO: `read-bencode`, `write-bencode`
+ TODO: `read-bencode`
  
  - Some method(s) to help users
    - ` gen-byte-seq` - converts a string to a byte-seq
