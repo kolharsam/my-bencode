@@ -1,11 +1,11 @@
 (ns my-bencode.core
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str])
+  (:import clojure.lang.RT))
 
 ;; TODO: Use of InputStreams and OutputStreams
 
 (def ^{:private true} comma ",")
 (def ^{:private true} colon ":")
-(def ^{:private true} re-colon #":")
 
 (defn- is-digit?
   "Returns true if c is a valid digit and is a positive number"
@@ -56,20 +56,32 @@
       (str/reverse (str/join #"" rest))
       input)))
 
+;; Similar to the idea applied above, can be used for writing
+(defn- write-netstring*
+  "Returns the netstring without the comma at the end"
+  [^String input]
+  (if-not (bytes? input)
+    (throw (Exception. "Byte Strings only!"))
+    (let [byte-count (alength input)
+          input-str (String. input "UTF-8")
+          final-str (str byte-count colon input-str)]
+      final-str)))
+
+;; Helper
+
 (defn gen-byte-seq
   "A helper function that is exposed to help convert to byte sequence"
   [^String input]
   (.getBytes input "UTF-8"))
 
+;; Netstring
+
 (defn write-netstring
   "Returns a netstring for the given byte sequence"
   [input]
-  (if-not (bytes? input)
-    (throw (Exception. "Incorrect Input!"))
-    (let [byte-count (alength input)
-          input-str (String. input "UTF-8")
-          final-str (str byte-count colon input-str comma)]
-      final-str)))
+  (let [net-str (write-netstring* input)
+        final-str (str net-str comma)]
+    final-str))
 
 (defn read-netstring
   "Returns the original string input, you could pass an optional key
@@ -91,11 +103,57 @@
            (throw (Exception. "Not a valid netstring. Check length."))
            netstring))))))
 
-;; TODO: read-bencode, write-bencode
-;; will have to use multi-methods for this
+;; Bencode
+
+;; Allowed expressions/symbols are:
+;; 1. Integers
+;; 2. Lists
+;; 3. Byte Strings
+;; 4. Maps / Dictionaries
+
+(defmulti write-bencode
+  (fn [input]
+    (cond
+      (instance? (RT/classForName "[B") input) :bytes
+      (integer? input) :integer
+      (string? input)  :string
+      ;; (nil? input) :list
+      ;; (map? input) :map
+      ;; (or (list? input) (coll? input) (.isArray (class input))) :list
+      :else (type input))))
+
+(defmethod write-bencode :default
+  [input]
+  (throw (IllegalArgumentException. (str "Cannot write value of type: " (class input)))))
+
+(defmethod write-bencode :bytes
+  [input]
+  (write-netstring* input))
+
+(defmethod write-bencode :integer
+  [input]
+  (str "i" input "e"))
+
+(defmethod write-bencode :string
+  [input]
+  (write-netstring* (gen-byte-seq input)))
+
 
 (comment
-  ;; (write-netstring (gen-byte-seq "hello world"))
-  ;; (read-length "1:Hello:world,")
-  ;; (read-netstring "11:hello world,")
+  ;; (write-bencode (format "%o" 34))
+  (is-bytestring? (gen-byte-seq "assss"))
+  (write-bencode (gen-byte-seq "Hello"))
+  (def s (gen-byte-seq "as"))
+  (= (type s) )
+
+
+  ;; Another option for testing for class [B
+
+  (defn- is-bytestring?
+    "Returns true if input is a bytestring"
+    [input]
+    (-> input
+        class
+        .getComponentType
+        (= Byte/TYPE)))
   )
