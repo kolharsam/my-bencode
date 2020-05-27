@@ -4,7 +4,7 @@ It is my own implementation of netstring and bencode in Clojure.
 
 I implemented this, just as an exercise.
 
-![my-bencode CI](https://github.com/kolharsam/my-bencode/workflows/my-bencode%20CI/badge.svg?branch=master)
+[![my-bencode Circle CI](https://circleci.com/gh/kolharsam/my-bencode.svg?style=svg)](https://app.circleci.com/pipelines/github/kolharsam/my-bencode) ![my-bencode CI](https://github.com/kolharsam/my-bencode/workflows/my-bencode%20CI/badge.svg?branch=master)
 
 ## Supported Methods
 
