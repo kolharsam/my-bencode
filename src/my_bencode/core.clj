@@ -18,6 +18,7 @@
 (def ^{:private true} e "e")
 (def ^{:private true} d "d")
 (def ^{:private true} i "i")
+(def ^{:private true} char-e \e)
 
 (defn- is-digit?
   "Returns true if c is a valid digit and is a positive number"
@@ -48,7 +49,7 @@
           {:number (to-number nums) :rest-string (apply str (rest in))}
           (if (is-digit? current)
             (recur other (conj nums current))
-            (throw (Exception. "Errored Input3!")))))))) ;; an invalid character found before first colon
+            (throw (Exception. "Errored Input!")))))))) ;; an invalid character found before first colon
 
 (defn- comma-present?
   "Returns true if the input has a comma at the end"
@@ -88,12 +89,16 @@
 
 ;; Netstring
 
+;; write-netstring
+
 (defn write-netstring
   "Returns a netstring for the given byte sequence"
   [input]
   (let [net-str (write-netstring* input)
         final-str (str net-str comma)]
     final-str))
+
+;; read-netstring
 
 (defn read-netstring
   "Returns the original string input, you could pass an optional key
@@ -186,7 +191,38 @@
                                  ((keyword current-key) orig-map))) [] sorted-keys)]
     (interleave (vec sorted-keys) rearranged-vals)))
 
-;; TODO: read-bencode
+;; read-bencode
+
+(defmulti read-bencode
+  "Returns the original data that was encoded"
+  (fn [input]
+    (let [first-byte (subs input 0 1)
+          par-equal (partial = first-byte)]
+      (cond
+        (par-equal i) :integer
+        (is-digit? first-byte) :string
+        ;; (par-equal l) :list
+        ;; (par-equal d) :map
+        ))))
+
+(defmethod read-bencode :default
+  [input]
+  (throw
+   (IllegalArgumentException.
+    "Cannot identify argument of type: " (class input))))
+
+(defmethod read-bencode :integer
+  [input]
+  (let [num-list (take-while #(not= % char-e) (rest input))
+        num-str (str/join num-list)]
+    (Integer/parseInt num-str)))
+
+;; no buffer-size for this unlike I had an option for netstrings
+(defmethod read-bencode :string
+  [input]
+  (let [len-info (read-length input)
+        rem-str (:rest-string len-info)]
+    rem-str))
 
 (comment
   ;; Some Notes
