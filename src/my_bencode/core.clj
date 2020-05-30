@@ -46,7 +46,7 @@
       (throw (Exception. "Errored Input!"))             ;; couldn't find a colon at all
       (let [[current & other] in]
         (if (= current colon)
-          {:number (to-number nums) :rest-string (apply str (rest in))}
+          {:value (to-number nums) :rest (apply str (rest in))}
           (if (is-digit? current)
             (recur other (conj nums current))
             (throw (Exception. "Errored Input!")))))))) ;; an invalid character found before first colon
@@ -80,6 +80,17 @@
           final-str (str byte-count colon input-str)]
       final-str)))
 
+;; For simplicity Imma assume that all input is valid!
+;; please don't hate me
+(defn- map-maker
+  "Returns a map from a list of values"
+  [input]
+  (let [ks (take-nth 2 input)
+        vs (take-nth 2 (rest input))
+        mks (map keyword ks)
+        mps (interleave mks vs)]
+    (apply hash-map mps)))
+
 ;; Helper
 
 (defn gen-byte-seq
@@ -107,7 +118,7 @@
    (read-netstring input :buffer-size nil))
   ([input & {:keys [buffer-size]}]
    (let [len-info (read-length input)
-         net-str-len (:number len-info)
+         net-str-len (:value len-info)
          mod-input (:rest-string len-info)]
      (when-not (nil? buffer-size)
        (when-not (<= net-str-len buffer-size)
@@ -193,6 +204,9 @@
 
 ;; read-bencode
 
+;; this is perhaps not the best code I've written, there are repetitions
+;; and this all feels make-shifty. I'll make it better soon, with just binary code
+
 (defmulti read-bencode
   "Returns the original data that was encoded"
   (fn [input]
@@ -200,29 +214,65 @@
           par-equal (partial = first-byte)]
       (cond
         (par-equal i) :integer
-        (is-digit? first-byte) :string
-        ;; (par-equal l) :list
-        ;; (par-equal d) :map
-        ))))
+        (par-equal l) :list
+        (par-equal d) :map
+        (is-digit? first-byte) :string))))
 
 (defmethod read-bencode :default
   [input]
   (throw
    (IllegalArgumentException.
-    "Cannot identify argument of type: " (class input))))
+    "Cannot identify of type bencode of type: " input)))
 
 (defmethod read-bencode :integer
   [input]
-  (let [num-list (take-while #(not= % char-e) (rest input))
-        num-str (str/join num-list)]
-    (Integer/parseInt num-str)))
+  (loop [input-split (str/split (subs input 1) #"")
+         nums []]
+    (if-not (= e (first input-split))
+      (recur (rest input-split) (conj nums (first input-split)))
+      (if (= (count input-split) 1)
+        (Integer/parseInt (str/join nums))
+        {:value (Integer/parseInt (str/join nums)) :rest (str/join (rest input-split))}))))
 
 ;; no buffer-size for this unlike I had an option for netstrings
 (defmethod read-bencode :string
   [input]
   (let [len-info (read-length input)
-        rem-str (:rest-string len-info)]
-    rem-str))
+        len-value (:value len-info)
+        rem-str (:rest len-info)
+        sub-main (subs rem-str 0 len-value)
+        rest-str (subs rem-str len-value)]
+    (if (= rest-str "")
+      sub-main
+      {:value sub-main :rest rest-str})))
+
+(defmethod read-bencode :list
+  [input]
+  (when-not (or (= e input) (= 1 (.length input)))
+    (let [edit-str (subs input 1)]
+      (loop [current-str edit-str
+             values []]
+        (if (= e (subs current-str 0 1))
+          (if (= (subs current-str 1) "")
+            values
+            {:value values :rest (subs current-str 1)})
+          (let [{value :value, rest-str :rest} (read-bencode current-str)]
+            (when-not (or (nil? value) (nil? rest-str))
+              (recur rest-str (conj values value)))))))))
+
+(defmethod read-bencode :map
+  [input]
+  (when-not (or (= e input) (= 1 (.length input)))
+    (let [edit-str (subs input 1)]
+      (loop [current-str edit-str
+             values []]
+        (if (= e (subs current-str 0 1))
+          (if (= (subs current-str 1) "")
+            (map-maker values)
+            {:value (map-maker values) :rest (subs current-str 1)})
+          (let [{value :value, rest-str :rest} (read-bencode current-str)]
+            (when-not (or (nil? value) (nil? rest-str))
+              (recur rest-str (conj values value)))))))))
 
 (comment
   ;; Some Notes
