@@ -62,7 +62,7 @@
 
 (deftest read-bencode-tests
   (testing "read-bencode for numbers (integers)"
-    (is (= (read-bencode "i0e") 0))
+    (is (zero? (read-bencode "i0e")))
     (is (= (read-bencode "i42e") 42))
     (is (= (read-bencode "i-8e") -8)))
   (testing "read-bencode for strings"
@@ -70,6 +70,14 @@
     (is (= (read-bencode "13:Hello, world!") hello))
     (is (= (read-bencode "19:Ham, Cheese & Bread") ham)))
   (testing "read-bencode for list"
-    )
+    (is (= (read-bencode "le") []))
+    (is (= (read-bencode "llelelelee") [[] [] [] []]))
+    (is (= (read-bencode "li1ei2ei3ee") [1 2 3]))
+    (is (= (read-bencode "l4:spam3:haye") ["spam" "hay"]))
+    (is (= (read-bencode "l4:spami42ed3:foo3:baree")) ["spam" 42 {:foo "bar"}]))
   (testing "read-bencode for map"
-    ))
+    (is (= (read-bencode "de") {}))
+    (is (= (read-bencode "dddeee") {}))
+    (is (= (read-bencode "d3:foo3:bar3:bari42ee") {:foo "bar" :bar 42}))
+    (is (= (read-bencode "d3:fooli1ei2ei3eee") {:foo [1 2 3]}))
+    (is (= (read-bencode "d3:food3:bari1eee") {:foo {:bar 1}}))))

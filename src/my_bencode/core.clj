@@ -119,7 +119,7 @@
   ([input & {:keys [buffer-size]}]
    (let [len-info (read-length input)
          net-str-len (:value len-info)
-         mod-input (:rest-string len-info)]
+         mod-input (:rest len-info)]
      (when-not (nil? buffer-size)
        (when-not (<= net-str-len buffer-size)
          (throw (Exception. "Buffer overflow."))))
