@@ -1,6 +1,6 @@
 # my-bencode
 
-It is my own implementation of netstring and bencode in Clojure.
+It is just a crude and bad, and you can say wrong too, implementation of netstring and bencode in Clojure.
 
 I implemented this, just as an exercise.
 
