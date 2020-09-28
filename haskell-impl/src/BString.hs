@@ -17,13 +17,13 @@ instance Show BString where
   show x = show $ getBString x
 
 encodeLength :: String -> String
-encodeLength s = (show $ length s) ++ ":" ++ s   
+encodeLength s = show (length s) ++ ":" ++ s   
 
 mkBString :: String -> BString
 mkBString x = BString $ encodeUtf8 . T.pack . encodeLength $ x
 
 removeEncodedStr :: String -> String
-removeEncodedStr x = drop 2 x
+removeEncodedStr = drop 2
 
 fromBString :: BString -> String
 fromBString = removeEncodedStr . T.unpack . decodeUtf8 . getBString 
