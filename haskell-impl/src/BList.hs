@@ -12,7 +12,7 @@ module BList (
 import qualified BInteger           as BI
 import qualified BString            as BST
 import qualified Data.ByteString    as BS
-import           Data.List          (elemIndex, intersperse, concat)
+import           Data.List          (concat, intercalate)
 import           Data.Maybe         (fromMaybe)
 import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -28,9 +28,7 @@ encodeList :: String -> String
 encodeList x = "l" ++ x ++ "e"
 
 mkBList :: String -> BList
-mkBList x = case x == "[]" of
-  False -> BList $ encodeUtf8 . T.pack . encodeList $ x
-  True  -> BList $ encodeUtf8 . T.pack $ "le"
+mkBList x = if x == "[]" then BList $ encodeUtf8 . T.pack $ "le" else BList $ encodeUtf8 . T.pack . encodeList $ x
 
 -- | TODO: we have to decoding stuff based on their types
 decodeList :: String -> String
@@ -52,7 +50,7 @@ isFirstOpening :: String -> Bool
 isFirstOpening = isCharBracket 0 openingBracket
 
 isLastClosing :: String -> Bool
-isLastClosing x = isCharBracket ((length x) - 1) closingBracket x
+isLastClosing x = isCharBracket (length x - 1) closingBracket x
 
 comma :: T.Text
 comma = T.pack ","
@@ -64,22 +62,20 @@ putTogether x = putWrongSplitTogether x [] []
 putWrongSplitTogether :: [String] -> [String] -> [String] -> [String]
 putWrongSplitTogether [] acc _ = acc
 
-putWrongSplitTogether (x:[]) acc tempAcc = case length tempAcc == 0 of
-  True  -> reverse $ x:acc
-  False -> reverse $ (stringTogetherComma $ reverse $ x:tempAcc):acc -- check case
+putWrongSplitTogether [x] acc tempAcc = if null tempAcc
+  then reverse $ x:acc
+  else reverse $ stringTogetherComma (reverse $ x : tempAcc) : acc
 
-putWrongSplitTogether (x:xs) acc tempAcc = case isFirstOpening x of
-  True  -> putWrongSplitTogether xs acc (x:tempAcc)
-  False -> case length tempAcc == 0 of
-    True  -> putWrongSplitTogether xs (x:acc) []
-    False -> case isLastClosing x of
-      True  -> putWrongSplitTogether xs ((stringTogetherComma $ reverse (x:tempAcc)):acc) [] -- check case
-      False -> putWrongSplitTogether xs acc (x:tempAcc)
+putWrongSplitTogether (x:xs) acc tempAcc
+  |isFirstOpening x = putWrongSplitTogether xs acc (x:tempAcc)
+  |null tempAcc = putWrongSplitTogether xs (x:acc) []
+  |isLastClosing x = putWrongSplitTogether xs (stringTogetherComma (reverse (x:tempAcc)):acc) []
+  |otherwise = putWrongSplitTogether xs acc (x:tempAcc)
 
 splitStrList :: String -> [String]
 splitStrList x = do
   let removeBrackets = drop 1 $ reverse $ drop 1 $ reverse x
-  putTogether $ map T.unpack $ T.splitOn comma $ T.pack $ filter (/= ' ') removeBrackets -- removes whitespaces as well
+  putTogether $ map T.unpack $ T.splitOn comma $ T.pack $ filter (/= ' ') removeBrackets
 
 -- TODO: This should handle maps too
 mkStrList :: String -> [String]
@@ -89,12 +85,10 @@ mkStrList x = do
     --  trace (show splitList)
      map (\s -> case BI.encodeIntStr s of
        Right v -> v
-       Left _ -> case isFirstOpening s && isLastClosing s of
-         True  -> "l" ++ (stringTogether $ mkStrList s) ++ "e" -- TODO: make fn for enclosing these lists
-         False -> BST.encodeStr s) splitList
+       Left _  -> if isFirstOpening s && isLastClosing s then "l" ++ stringTogether (mkStrList s) ++ "e" else BST.encodeStr s) splitList
 
 stringTogether :: [String] -> String
-stringTogether = foldr (++) ""
+stringTogether = concat
 
 stringTogetherComma :: [String] -> String
-stringTogetherComma x = concat $ intersperse "," x
+stringTogetherComma = intercalate ","
