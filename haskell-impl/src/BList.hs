@@ -12,9 +12,10 @@ module BList (
 import qualified BInteger           as BI
 import qualified BString            as BST
 import qualified Data.ByteString    as BS
+import qualified Data.Text          as T
+
 import           Data.List          (concat, intercalate)
 import           Data.Maybe         (fromMaybe)
-import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
 
 newtype BList = BList { getBList :: BS.ByteString }

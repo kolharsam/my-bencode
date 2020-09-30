@@ -30,6 +30,7 @@ library
       BInteger
       BString
       BList
+      BMap
       ReadBType
   other-modules:
       Paths_bencode

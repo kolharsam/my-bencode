@@ -5,12 +5,13 @@ module ReadBType (
   , readInput
 ) where
 
-import           Control.Applicative (Alternative (empty, (<|>)))
 
 import qualified BInteger            as BI
 import qualified BString             as BST
 import qualified BList               as BL
 import qualified Data.ByteString     as BS
+
+import           Control.Applicative (Alternative (empty, (<|>)))
 import           Text.Read           (readEither)
 
 data BType = BInt BI.BInteger
