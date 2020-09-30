@@ -67,10 +67,10 @@ putWrongSplitTogether [x] acc tempAcc = if null tempAcc
   else reverse $ stringTogetherComma (reverse $ x : tempAcc) : acc
 
 putWrongSplitTogether (x:xs) acc tempAcc
-  |isFirstOpening x = putWrongSplitTogether xs acc (x:tempAcc)
-  |null tempAcc = putWrongSplitTogether xs (x:acc) []
-  |isLastClosing x = putWrongSplitTogether xs (stringTogetherComma (reverse (x:tempAcc)):acc) []
-  |otherwise = putWrongSplitTogether xs acc (x:tempAcc)
+  |isFirstOpening x && x /= "[]"  = putWrongSplitTogether xs acc (x:tempAcc)
+  |null tempAcc                   = putWrongSplitTogether xs (x:acc) []
+  |isLastClosing x  && x /= "[]"  = putWrongSplitTogether xs (stringTogetherComma (reverse (x:tempAcc)):acc) []
+  |otherwise                      = putWrongSplitTogether xs acc (x:tempAcc)
 
 splitStrList :: String -> [String]
 splitStrList x = do
@@ -85,7 +85,12 @@ mkStrList x = do
     --  trace (show splitList)
      map (\s -> case BI.encodeIntStr s of
        Right v -> v
-       Left _  -> if isFirstOpening s && isLastClosing s then "l" ++ stringTogether (mkStrList s) ++ "e" else BST.encodeStr s) splitList
+       Left _  -> if s == "[]"
+         then "le"
+         else if isFirstOpening s && isLastClosing s
+           then "l" ++ stringTogether (mkStrList s) ++ "e"
+           else BST.encodeStr s
+     ) splitList
 
 stringTogether :: [String] -> String
 stringTogether = concat
