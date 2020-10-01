@@ -10,9 +10,10 @@ module BList (
 -- import Debug.Trace (trace)
 
 import qualified BInteger           as BI
-import qualified BString            as BST
-import qualified Data.ByteString    as BS
+import qualified BString            as BT
+
 import qualified Data.Text          as T
+import qualified Data.ByteString    as BS
 
 import           Data.List          (concat, intercalate)
 import           Data.Maybe         (fromMaybe)
@@ -44,14 +45,11 @@ openingBracket = '['
 closingBracket :: Char
 closingBracket = ']'
 
-isCharBracket :: Int -> Char -> String -> Bool
-isCharBracket pos char word = word !! pos == char
-
 isFirstOpening :: String -> Bool
-isFirstOpening = isCharBracket 0 openingBracket
+isFirstOpening x = head x == openingBracket
 
 isLastClosing :: String -> Bool
-isLastClosing x = isCharBracket (length x - 1) closingBracket x
+isLastClosing x = last x == closingBracket
 
 comma :: T.Text
 comma = T.pack ","
@@ -90,7 +88,7 @@ mkStrList x = do
          then "le"
          else if isFirstOpening s && isLastClosing s
            then "l" ++ stringTogether (mkStrList s) ++ "e"
-           else BST.encodeStr s
+           else BT.encodeStr s
      ) splitList
 
 stringTogether :: [String] -> String

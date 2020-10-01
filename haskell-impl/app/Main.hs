@@ -4,7 +4,7 @@ import           ReadBType (readInput)
 
 main :: IO ()
 main = do
-  -- Move all into the separate test files
+  -- TODO: Move all into the separate test files
   print $ readInput "89"
   print $ readInput "asdasdasd"
   print $ readInput "[1,2,3,4,5]"

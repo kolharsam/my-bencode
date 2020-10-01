@@ -7,6 +7,7 @@ module BString(
 
 import qualified Data.ByteString           as BS 
 import qualified Data.Text                 as T
+
 import           Data.Text.Encoding        (encodeUtf8, decodeUtf8)
 import           Text.Read                 (readEither)
 
