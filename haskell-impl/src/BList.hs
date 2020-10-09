@@ -30,7 +30,9 @@ encodeList :: String -> String
 encodeList x = "l" ++ x ++ "e"
 
 mkBList :: String -> BList
-mkBList x = if x == "[]" then BList $ encodeUtf8 . T.pack $ "le" else BList $ encodeUtf8 . T.pack . encodeList $ x
+mkBList x = if x == "[]"
+  then BList $ encodeUtf8 . T.pack $ "le"
+  else BList $ encodeUtf8 . T.pack . encodeList $ x
 
 -- | TODO: we have to decoding stuff based on their types
 decodeList :: String -> String

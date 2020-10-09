@@ -24,9 +24,9 @@ data BType = BInt BI.BInteger
 
 instance Alternative (Either String) where
   empty = Left "There's nothing here to compare!"
-  Left _ <|> Right v = Right v
-  Right v <|> _  = Right v
-  Left _ <|> Left _ = Left "It is neither an integer nor a string nor a list nor a map!"
+  Left _  <|> Right v = Right v
+  Right v <|> _       = Right v
+  Left _  <|> Left _  = Left "It is neither an integer nor a string nor a list nor a map!"
 
 -- instance Show (Either String BI.BInteger) where
 --   show x = case x of
@@ -43,7 +43,7 @@ readBList x
 
 readBMap :: String -> Either String BM.BMap
 readBMap x
-  |BM.isFirstOpening x && BM.isLastClosing x = undefined
+  |BM.isFirstOpening x && BM.isLastClosing x = undefined  -- Right $ BM.mkBMap $ BM.stringTogether $ BM.mkStrMap x
   |otherwise                                 = Left "This is not a valid map"
 
 readInput :: String -> Either String BType
